@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+// This is your Prisma schema file
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -8,4 +8,57 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Enum pour les types de comptes d'épargne
+enum AccountType {
+  LEP
+  PEL
+  LIVRET_A
+  AUTRE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  savingsAccounts SavingsAccount[]
+
+  @@map("users")
+}
+
+model SavingsAccount {
+  id             String      @id @default(cuid())
+  userId         String
+  name           String
+  type           AccountType // Type de compte (LEP, PEL, etc.)
+  interestRate   Float       // Taux d'intérêt annuel (ex: 2.7)
+  initialBalance Float       @default(0) // Solde initial au moment de la création
+  currentBalance Float       @default(0) // Solde actuel (mis à jour après chaque contribution)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions SavingsContribution[]
+
+  @@index([userId])
+  @@map("savings_accounts")
+}
+
+model SavingsContribution {
+  id               String   @id @default(cuid())
+  savingsAccountId String
+  amount           Float
+  date             DateTime
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  savingsAccount SavingsAccount @relation(fields: [savingsAccountId], references: [id], onDelete: Cascade)
+
+  @@index([savingsAccountId, date])
+  @@map("savings_contributions")
 }
