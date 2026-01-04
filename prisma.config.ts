@@ -1,7 +1,9 @@
 export default {
   datasources: {
     db: {
-      url: process.env.DATABASE_URL,
+      url: {
+        fromEnvVar: "DATABASE_URL",
+      },
     },
   },
 };
