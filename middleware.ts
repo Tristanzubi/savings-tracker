@@ -1,30 +1,39 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+// TODO: Réactiver l'authentification plus tard
+export function middleware(_request: NextRequest) {
+  // Middleware désactivé temporairement pour le développement
+  return NextResponse.next();
+
+  /*
   const { pathname } = request.nextUrl;
 
-  // Routes protégées nécessitant une authentification
-  const protectedRoutes = ["/dashboard"];
+  // Routes publiques (ne nécessitant pas d'authentification)
+  const publicRoutes = ["/test", "/auth"];
 
-  // Vérifier si la route actuelle est protégée
-  const isProtectedRoute = protectedRoutes.some((route) =>
+  // Vérifier si la route actuelle est publique
+  const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
-  if (isProtectedRoute) {
-    // Vérifier si l'utilisateur a une session
-    const sessionToken = request.cookies.get("better-auth.session_token");
+  // Si c'est une route publique, laisser passer
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
 
-    if (!sessionToken) {
-      // Rediriger vers la page de login si pas de session
-      const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  // Pour toutes les autres routes, vérifier l'authentification
+  const sessionToken = request.cookies.get("better-auth.session_token");
+
+  if (!sessionToken) {
+    // Rediriger vers la page de login si pas de session
+    const loginUrl = new URL("/auth/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
+  */
 }
 
 export const config = {
