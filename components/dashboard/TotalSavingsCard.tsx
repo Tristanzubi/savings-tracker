@@ -21,7 +21,7 @@ export function TotalSavingsCard({
   };
 
   return (
-    <div className="relative col-span-1 flex flex-col justify-between rounded-3xl bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 p-6 text-slate-900 shadow-lg shadow-orange-500/40 lg:col-span-2">
+    <div className="relative col-span-1 flex flex-col justify-between rounded-3xl bg-linear-to-br from-orange-500 via-orange-400 to-amber-300 p-6 text-slate-900 shadow-lg shadow-orange-500/40 lg:col-span-2">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ export function TotalSavingsCard({
           </div>
           <div className="h-3 w-full rounded-full bg-white/40 ring-1 ring-white/40">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-lime-400 via-orange-400 to-amber-300 shadow-sm shadow-orange-700/40"
+              className="h-full rounded-full bg-linear-to-r from-lime-400 via-orange-400 to-amber-300 shadow-sm shadow-orange-700/40"
               style={{ width: `${percentage}%` }}
             />
           </div>

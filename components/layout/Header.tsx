@@ -120,7 +120,7 @@ export function Header({
 
           {/* User info (desktop) */}
           <div className="hidden items-center gap-2 rounded-full bg-white/80 px-3 py-1.5 text-sm shadow-md shadow-slate-900/5 dark:bg-slate-900/80 md:flex">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-xs font-semibold text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-tr from-orange-500 to-amber-400 text-xs font-semibold text-white">
               {userInitial}
             </div>
             <div className="flex flex-col">
@@ -162,7 +162,7 @@ export function Header({
       {mobileMenuOpen && (
         <div className="border-t border-slate-200/70 bg-[#FAF8F3]/95 px-4 pb-4 pt-2 shadow-sm dark:border-slate-800 dark:bg-[#020617]/95 md:hidden">
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-xs font-semibold text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-tr from-orange-500 to-amber-400 text-xs font-semibold text-white">
               {userInitial}
             </div>
             <div className="flex flex-col">
