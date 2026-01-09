@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
 import { Check, Calendar, Wallet, Plus } from "lucide-react";
-import { useAccounts, useContributions } from "@/lib/hooks";
+import { useAccounts, useContributions, useSettings } from "@/lib/hooks";
 import { accountsApi, contributionsApi } from "@/lib/api-client";
 
 const accountTypeEmojis: Record<string, string> = {
@@ -37,6 +37,7 @@ export default function DashboardPage() {
   // Fetch real data from backend
   const { accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useAccounts();
   const { contributions, isLoading: contributionsLoading, refetch: refetchContributions } = useContributions();
+  const { settings } = useSettings();
 
   // Handle adding new account
   const handleAddAccount = async (data: any) => {
@@ -81,7 +82,7 @@ export default function DashboardPage() {
 
   // Calculate totals from accounts
   const totalSavings = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
-  const goal = 40000; // Should come from settings API
+  const goal = settings?.goal || 40000;
   const percentage = goal > 0 ? Math.round((totalSavings / goal) * 100) : 0;
   const remainingToSave = Math.max(0, goal - totalSavings);
 

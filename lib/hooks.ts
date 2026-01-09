@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { accountsApi, contributionsApi, statsApi } from './api-client';
+import { accountsApi, contributionsApi, statsApi, settingsApi } from './api-client';
 
 // Hook pour les comptes d'épargne
 export function useAccounts() {
@@ -79,4 +79,30 @@ export function useStats() {
   }, [fetchStats]);
 
   return { stats, isLoading, error, refetch: fetchStats };
+}
+
+// Hook pour les paramètres utilisateur
+export function useSettings() {
+  const [settings, setSettings] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await settingsApi.get();
+      setSettings(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch settings');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  return { settings, isLoading, error, refetch: fetchSettings };
 }
