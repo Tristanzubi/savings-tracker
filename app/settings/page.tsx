@@ -35,7 +35,11 @@ export default function SettingsPage() {
         const data = await settingsApi.get();
         if (data) {
           if (data.goal) setGoalAmount(data.goal.toString());
-          if (data.targetDate) setTargetDate(data.targetDate);
+          if (data.targetDate) {
+            const date = new Date(data.targetDate);
+            const formattedDate = date.toISOString().split('T')[0];
+            setTargetDate(formattedDate);
+          }
         }
       } catch (error) {
         console.error("Error loading settings:", error);
