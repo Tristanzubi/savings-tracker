@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// TODO: Réactiver l'authentification plus tard
-export function middleware(_request: NextRequest) {
-  // Middleware désactivé temporairement pour le développement
-  return NextResponse.next();
-
-  /*
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Routes publiques (ne nécessitant pas d'authentification)
@@ -33,7 +28,6 @@ export function middleware(_request: NextRequest) {
   }
 
   return NextResponse.next();
-  */
 }
 
 export const config = {
