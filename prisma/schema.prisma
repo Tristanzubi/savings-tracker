@@ -18,27 +18,81 @@ enum AccountType {
   AUTRE
 }
 
+// Better Auth Models (do not modify)
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
+  sessions      Session[]
+  accounts      Account[]
   savingsAccounts SavingsAccount[]
 
-  @@map("users")
+  @@unique([email])
+  @@map("user")
 }
 
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// Your custom models
 model SavingsAccount {
   id             String      @id @default(cuid())
   userId         String
   name           String
-  type           AccountType // Type de compte (LEP, PEL, etc.)
-  interestRate   Float // Taux d'intérêt annuel (ex: 2.7)
-  initialBalance Float       @default(0) // Solde initial au moment de la création
-  currentBalance Float       @default(0) // Solde actuel (mis à jour après chaque contribution)
+  type           AccountType
+  interestRate   Float
+  initialBalance Float       @default(0)
+  currentBalance Float       @default(0)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
