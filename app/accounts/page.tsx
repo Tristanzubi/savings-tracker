@@ -6,64 +6,65 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { SavingsAccountCard } from "@/components/savings/SavingsAccountCard";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
 import { Plus } from "lucide-react";
+import { useAccounts } from "@/lib/hooks";
+import { accountsApi } from "@/lib/api-client";
+
+const accountTypeEmojis: Record<string, string> = {
+  LEP: "🏦",
+  PEL: "🏡",
+  LIVRET_A: "💰",
+  AUTRE: "📊",
+};
+
+const accountDescriptions: Record<string, string> = {
+  LEP: "Livret d'épargne populaire",
+  PEL: "Plan épargne logement",
+  LIVRET_A: "Épargne de précaution",
+  AUTRE: "Autre type de compte",
+};
 
 export default function AccountsPage() {
   const [activeRoute] = useState("accounts");
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Mock data - à remplacer par des vraies données de la DB
-  const accounts = [
-    {
-      id: "1",
-      name: "LEP Tristan",
-      type: "LEP" as const,
-      balance: 7500,
-      interestRate: 2.7,
-      createdAt: "03/01/2022",
-      emoji: "🏦",
-      description: "Livret d'épargne populaire",
-    },
-    {
-      id: "2",
-      name: "LEP Partenaire",
-      type: "LEP" as const,
-      balance: 8000,
-      interestRate: 2.7,
-      createdAt: "15/02/2022",
-      emoji: "🏦",
-      description: "Livret d'épargne populaire",
-    },
-    {
-      id: "3",
-      name: "PEL Commun",
-      type: "PEL" as const,
-      balance: 7000,
-      interestRate: 1.5,
-      createdAt: "10/03/2023",
-      emoji: "🏡",
-      description: "Plan épargne logement",
-    },
-    {
-      id: "4",
-      name: "Livret A Sécurité",
-      type: "Livret A" as const,
-      balance: 3500,
-      interestRate: 3.0,
-      createdAt: "05/05/2021",
-      emoji: "💰",
-      description: "Épargne de précaution",
-    },
-  ];
+  const { accounts, isLoading, refetch: refetchAccounts } = useAccounts();
 
-  const handleAddAccount = (data: any) => {
-    console.log("Nouveau compte créé:", data);
-    // TODO: Ajouter le compte à la base de données
+  const handleAddAccount = async (data: any) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await accountsApi.create({
+        name: data.name,
+        type: data.type,
+        interestRate: data.interestRate,
+        initialBalance: data.initialBalance,
+      });
+      setShowAddAccountForm(false);
+      refetchAccounts();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de la création du compte");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleViewDetails = (accountId: string) => {
     console.log("Voir détails du compte:", accountId);
     // TODO: Navigation vers la page de détails
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
+        <Header activeRoute={activeRoute} />
+        <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
+          <div className="text-center">Chargement des comptes...</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
@@ -88,11 +89,11 @@ export default function AccountsPage() {
                 key={account.id}
                 accountName={account.name}
                 accountType={account.type}
-                balance={account.balance}
+                balance={account.currentBalance}
                 interestRate={account.interestRate}
-                createdAt={account.createdAt}
-                emoji={account.emoji}
-                description={account.description}
+                createdAt={new Date(account.createdAt).toLocaleDateString('fr-FR')}
+                emoji={accountTypeEmojis[account.type] || "💰"}
+                description={accountDescriptions[account.type] || "Compte d'épargne"}
                 onViewDetails={() => handleViewDetails(account.id)}
               />
             ))}
@@ -111,10 +112,20 @@ export default function AccountsPage() {
         </div>
       </main>
 
+      {/* Error message */}
+      {submitError && (
+        <div className="fixed bottom-4 right-4 rounded-2xl bg-red-500 px-4 py-3 text-white shadow-lg">
+          {submitError}
+        </div>
+      )}
+
       {/* Add Account Modal */}
       <AddAccountForm
         isOpen={showAddAccountForm}
-        onClose={() => setShowAddAccountForm(false)}
+        onClose={() => {
+          setShowAddAccountForm(false);
+          setSubmitError(null);
+        }}
         onSubmit={handleAddAccount}
       />
     </div>

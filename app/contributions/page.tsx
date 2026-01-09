@@ -1,87 +1,95 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Header } from "@/components/layout/Header";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ContributionItem } from "@/components/dashboard/ContributionItem";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { Plus } from "lucide-react";
+import { useContributions, useAccounts } from "@/lib/hooks";
+import { contributionsApi } from "@/lib/api-client";
 
 export default function ContributionsPage() {
   const [activeRoute] = useState("contributions");
   const [showAddContributionForm, setShowAddContributionForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Mock data - à remplacer par des vraies données de la DB
-  const contributions = [
-    {
-      id: "1",
-      amount: 500,
-      accountName: "LEP Tristan",
-      date: "03 janv. 2025",
-      label: "Salaire décembre",
-    },
-    {
-      id: "2",
-      amount: 400,
-      accountName: "PEL Commun",
-      date: "28 déc. 2024",
-      label: "Virement programmé",
-    },
-    {
-      id: "3",
-      amount: 300,
-      accountName: "Livret A",
-      date: "15 déc. 2024",
-      label: "Bonus annuel",
-    },
-    {
-      id: "4",
-      amount: 500,
-      accountName: "LEP Partenaire",
-      date: "01 déc. 2024",
-      label: "Salaire",
-    },
-    {
-      id: "5",
-      amount: 350,
-      accountName: "PEL Commun",
-      date: "28 nov. 2024",
-      label: "Automatique",
-    },
-    {
-      id: "6",
-      amount: 600,
-      accountName: "LEP Tristan",
-      date: "15 nov. 2024",
-      label: "Prime",
-    },
-    {
-      id: "7",
-      amount: 400,
-      accountName: "Livret A",
-      date: "01 nov. 2024",
-      label: "Virement mensuel",
-    },
-    {
-      id: "8",
-      amount: 500,
-      accountName: "LEP Partenaire",
-      date: "28 oct. 2024",
-      label: "Salaire",
-    },
-  ];
+  const { contributions, isLoading: contributionsLoading, refetch: refetchContributions } = useContributions();
+  const { accounts, isLoading: accountsLoading } = useAccounts();
 
-  const accounts = [
-    { id: "1", name: "LEP Tristan" },
-    { id: "2", name: "LEP Partenaire" },
-    { id: "3", name: "PEL Commun" },
-    { id: "4", name: "Livret A Sécurité" },
-  ];
-
-  const handleAddContribution = (data: any) => {
-    console.log("Nouveau versement créé:", data);
-    // TODO: Ajouter le versement à la base de données
+  const handleAddContribution = async (data: any) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await contributionsApi.create({
+        savingsAccountId: data.accountId,
+        amount: data.amount,
+        date: new Date(data.date).toISOString(),
+        notes: data.note,
+      });
+      setShowAddContributionForm(false);
+      refetchContributions();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'ajout du versement");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Calculate stats from contributions
+  const stats = useMemo(() => {
+    if (!contributions || contributions.length === 0) {
+      return { thisMonth: 0, average: 0, total: 0 };
+    }
+
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const thisMonthContributions = contributions.filter((c) => {
+      const date = new Date(c.date);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    });
+
+    const total = contributions.reduce((sum, c) => sum + c.amount, 0);
+    const thisMonth = thisMonthContributions.reduce((sum, c) => sum + c.amount, 0);
+    const average = contributions.length > 0 ? Math.round(total / contributions.length) : 0;
+
+    return { thisMonth, average, total };
+  }, [contributions]);
+
+  // Format contributions for display
+  const formattedContributions = contributions.map((contrib) => {
+    const account = accounts.find(acc => acc.id === contrib.savingsAccountId);
+    return {
+      id: contrib.id,
+      amount: contrib.amount,
+      accountName: account?.name || "Unknown",
+      date: new Date(contrib.date).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      label: contrib.notes || "Versement",
+    };
+  });
+
+  const accountsForSelect = accounts.map((acc) => ({
+    id: acc.id,
+    name: acc.name,
+  }));
+
+  if (contributionsLoading || accountsLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
+        <Header activeRoute={activeRoute} />
+        <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
+          <div className="text-center">Chargement des versements...</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
@@ -106,21 +114,18 @@ export default function ContributionsPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Total ce mois
                 </p>
-                <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
-                  +12 % vs mois dernier
-                </span>
               </div>
               <p className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                1 200 €
+                {stats.thisMonth.toLocaleString('fr-FR')} €
               </p>
             </div>
 
             <div className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-lg shadow-slate-900/8 ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Moyenne mensuelle
+                Moyenne par versement
               </p>
               <p className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                950 €
+                {stats.average.toLocaleString('fr-FR')} €
               </p>
             </div>
 
@@ -129,7 +134,7 @@ export default function ContributionsPage() {
                 Total depuis début
               </p>
               <p className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                26 000 €
+                {stats.total.toLocaleString('fr-FR')} €
               </p>
             </div>
           </div>
@@ -140,26 +145,40 @@ export default function ContributionsPage() {
               Tous les versements
             </h2>
             <div className="space-y-2">
-              {contributions.map((contribution) => (
-                <ContributionItem
-                  key={contribution.id}
-                  amount={contribution.amount}
-                  accountName={contribution.accountName}
-                  date={contribution.date}
-                  label={contribution.label}
-                />
-              ))}
+              {formattedContributions.length > 0 ? (
+                formattedContributions.map((contribution) => (
+                  <ContributionItem
+                    key={contribution.id}
+                    amount={contribution.amount}
+                    accountName={contribution.accountName}
+                    date={contribution.date}
+                    label={contribution.label}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-slate-500 dark:text-slate-400">Aucun versement enregistré.</p>
+              )}
             </div>
           </div>
         </div>
       </main>
 
+      {/* Error message */}
+      {submitError && (
+        <div className="fixed bottom-4 right-4 rounded-2xl bg-red-500 px-4 py-3 text-white shadow-lg">
+          {submitError}
+        </div>
+      )}
+
       {/* Add Contribution Modal */}
       <AddContributionForm
         isOpen={showAddContributionForm}
-        onClose={() => setShowAddContributionForm(false)}
+        onClose={() => {
+          setShowAddContributionForm(false);
+          setSubmitError(null);
+        }}
         onSubmit={handleAddContribution}
-        accounts={accounts}
+        accounts={accountsForSelect}
       />
     </div>
   );

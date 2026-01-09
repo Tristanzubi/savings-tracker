@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Header } from "@/components/layout/Header";
+import { settingsApi } from "@/lib/api-client";
 import {
   CheckCircle,
   User,
@@ -20,16 +21,53 @@ export default function SettingsPage() {
   const [goalAmount, setGoalAmount] = useState("40000");
   const [targetDate, setTargetDate] = useState("2028-12-31");
   const [userName, setUserName] = useState("Tristan");
-  const [userEmail] = useState("tristan@example.com");
+  const [userEmail, setUserEmail] = useState("tristan@example.com");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSaveSettings = () => {
-    console.log("Sauvegarder les paramètres:", { goalAmount, targetDate });
-    // TODO: Sauvegarder en DB
+  // Load settings from API
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true);
+        const data = await settingsApi.get();
+        if (data) {
+          if (data.goal) setGoalAmount(data.goal.toString());
+          if (data.targetDate) setTargetDate(data.targetDate);
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+    try {
+      await settingsApi.update({
+        goal: parseFloat(goalAmount),
+        targetDate,
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleUpdateProfile = () => {
+  const handleUpdateProfile = async () => {
     console.log("Modifier le profil:", { userName });
-    // TODO: Mettre à jour le profil
+    // TODO: Mettre à jour le profil via API
   };
 
   const handleDeleteAccount = () => {
@@ -82,7 +120,7 @@ export default function SettingsPage() {
               </div>
 
               <form
-                onSubmit={(e) => { e.preventDefault(); handleSaveSettings(); }}
+                onSubmit={handleSaveSettings}
                 className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2"
               >
                 <div className="space-y-1.5">
@@ -99,7 +137,8 @@ export default function SettingsPage() {
                       inputMode="decimal"
                       value={goalAmount}
                       onChange={(e) => setGoalAmount(e.target.value)}
-                      className="w-full border-none bg-transparent text-base outline-none placeholder:text-slate-400"
+                      disabled={isLoading}
+                      className="w-full border-none bg-transparent text-base outline-none placeholder:text-slate-400 disabled:opacity-50"
                       aria-label="Montant cible en euros"
                     />
                     <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -125,18 +164,30 @@ export default function SettingsPage() {
                       type="date"
                       value={targetDate}
                       onChange={(e) => setTargetDate(e.target.value)}
-                      className="w-full border-none bg-transparent text-base outline-none placeholder:text-slate-400"
+                      disabled={isLoading}
+                      className="w-full border-none bg-transparent text-base outline-none placeholder:text-slate-400 disabled:opacity-50"
                     />
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 space-y-2">
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-slate-900/40 transition hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600"
+                    disabled={isSaving || isLoading}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-slate-900/40 transition hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-700 dark:hover:bg-slate-600"
                   >
-                    Sauvegarder les paramètres
+                    {isSaving ? "Sauvegarde..." : "Sauvegarder les paramètres"}
                   </button>
+                  {saveSuccess && (
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                      ✓ Paramètres sauvegardés avec succès
+                    </p>
+                  )}
+                  {saveError && (
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      ✗ {saveError}
+                    </p>
+                  )}
                 </div>
               </form>
             </section>
