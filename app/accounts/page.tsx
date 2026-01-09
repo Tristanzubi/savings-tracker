@@ -88,7 +88,7 @@ export default function AccountsPage() {
               <SavingsAccountCard
                 key={account.id}
                 accountName={account.name}
-                accountType={account.type}
+                accountType={account.type as any}
                 balance={account.currentBalance}
                 interestRate={account.interestRate}
                 createdAt={new Date(account.createdAt).toLocaleDateString('fr-FR')}

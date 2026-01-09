@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { accountsApi, contributionsApi, statsApi, settingsApi } from './api-client';
+import { accountsApi, contributionsApi, statsApi, settingsApi, type UserSettings, type SavingsAccount, type SavingsContribution } from './api-client';
 
 // Hook pour les comptes d'épargne
 export function useAccounts() {
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<SavingsAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +31,7 @@ export function useAccounts() {
 
 // Hook pour les contributions
 export function useContributions() {
-  const [contributions, setContributions] = useState<any[]>([]);
+  const [contributions, setContributions] = useState<SavingsContribution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,7 +83,7 @@ export function useStats() {
 
 // Hook pour les paramètres utilisateur
 export function useSettings() {
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

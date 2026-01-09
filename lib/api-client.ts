@@ -7,6 +7,35 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+export interface UserSettings {
+  id: string | null;
+  goal: number;
+  targetDate: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface SavingsAccount {
+  id: string;
+  userId: string;
+  name: string;
+  type: string;
+  interestRate: number;
+  initialBalance: number;
+  currentBalance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavingsContribution {
+  id: string;
+  savingsAccountId: string;
+  amount: number;
+  date: string;
+  notes?: string;
+  createdAt: string;
+}
+
 async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit
@@ -31,32 +60,32 @@ async function apiRequest<T>(
 
 // Accounts API
 export const accountsApi = {
-  list: () => apiRequest('/api/accounts'),
-  get: (id: string) => apiRequest(`/api/accounts/${id}`),
+  list: () => apiRequest<SavingsAccount[]>('/api/accounts'),
+  get: (id: string) => apiRequest<SavingsAccount>(`/api/accounts/${id}`),
   create: (data: any) =>
-    apiRequest('/api/accounts', {
+    apiRequest<SavingsAccount>('/api/accounts', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   update: (id: string, data: any) =>
-    apiRequest(`/api/accounts/${id}`, {
+    apiRequest<SavingsAccount>(`/api/accounts/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
-    apiRequest(`/api/accounts/${id}`, { method: 'DELETE' }),
+    apiRequest<void>(`/api/accounts/${id}`, { method: 'DELETE' }),
 };
 
 // Contributions API
 export const contributionsApi = {
-  list: () => apiRequest('/api/contributions'),
+  list: () => apiRequest<SavingsContribution[]>('/api/contributions'),
   create: (data: any) =>
-    apiRequest('/api/contributions', {
+    apiRequest<SavingsContribution>('/api/contributions', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   delete: (id: string) =>
-    apiRequest(`/api/contributions/${id}`, { method: 'DELETE' }),
+    apiRequest<void>(`/api/contributions/${id}`, { method: 'DELETE' }),
 };
 
 // Stats API
@@ -66,9 +95,9 @@ export const statsApi = {
 
 // Settings API
 export const settingsApi = {
-  get: () => apiRequest('/api/settings'),
+  get: () => apiRequest<UserSettings>('/api/settings'),
   update: (data: any) =>
-    apiRequest('/api/settings', {
+    apiRequest<UserSettings>('/api/settings', {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
