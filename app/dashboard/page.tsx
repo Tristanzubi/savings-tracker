@@ -11,6 +11,7 @@ import { AddContributionForm } from "@/components/dashboard/AddContributionForm"
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
 import { Check, Calendar, Wallet, Plus } from "lucide-react";
 import { useAccounts, useContributions } from "@/lib/hooks";
+import { accountsApi, contributionsApi } from "@/lib/api-client";
 
 const accountTypeEmojis: Record<string, string> = {
   LEP: "🏦",
@@ -30,10 +31,53 @@ export default function DashboardPage() {
   const [activeRoute] = useState("dashboard");
   const [showAddContributionForm, setShowAddContributionForm] = useState(false);
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Fetch real data from backend
-  const { accounts, isLoading: accountsLoading } = useAccounts();
-  const { contributions, isLoading: contributionsLoading } = useContributions();
+  const { accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useAccounts();
+  const { contributions, isLoading: contributionsLoading, refetch: refetchContributions } = useContributions();
+
+  // Handle adding new account
+  const handleAddAccount = async (data: any) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await accountsApi.create({
+        name: data.name,
+        type: data.type,
+        interestRate: data.interestRate,
+        initialBalance: data.initialBalance,
+      });
+      setShowAddAccountForm(false);
+      refetchAccounts();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de la création du compte");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle adding new contribution
+  const handleAddContribution = async (data: any) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await contributionsApi.create({
+        savingsAccountId: data.accountId,
+        amount: data.amount,
+        date: new Date(data.date).toISOString(),
+        notes: data.note,
+      });
+      setShowAddContributionForm(false);
+      refetchContributions();
+      refetchAccounts();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'ajout du versement");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Calculate totals from accounts
   const totalSavings = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
@@ -158,18 +202,31 @@ export default function DashboardPage() {
         </div>
       </main>
 
+      {/* Error message */}
+      {submitError && (
+        <div className="fixed bottom-4 right-4 rounded-2xl bg-red-500 px-4 py-3 text-white shadow-lg">
+          {submitError}
+        </div>
+      )}
+
       {/* Modals */}
       <AddContributionForm
         isOpen={showAddContributionForm}
-        onClose={() => setShowAddContributionForm(false)}
-        onSubmit={(data) => console.log("Nouveau versement:", data)}
+        onClose={() => {
+          setShowAddContributionForm(false);
+          setSubmitError(null);
+        }}
+        onSubmit={handleAddContribution}
         accounts={accountsForSelect}
       />
 
       <AddAccountForm
         isOpen={showAddAccountForm}
-        onClose={() => setShowAddAccountForm(false)}
-        onSubmit={(data) => console.log("Nouveau compte:", data)}
+        onClose={() => {
+          setShowAddAccountForm(false);
+          setSubmitError(null);
+        }}
+        onSubmit={handleAddAccount}
       />
     </div>
   );
