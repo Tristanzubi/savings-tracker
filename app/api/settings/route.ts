@@ -35,13 +35,16 @@ export async function GET() {
       return NextResponse.json({
         id: null,
         goal: 40000,
-        targetDate: new Date("2028-12-31"),
+        targetDate: "2028-12-31T00:00:00.000Z",
         createdAt: null,
         updatedAt: null,
       });
     }
 
-    return NextResponse.json(userSettings);
+    return NextResponse.json({
+      ...userSettings,
+      targetDate: userSettings.targetDate.toISOString(),
+    });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json(
@@ -105,7 +108,10 @@ export async function PATCH(request: NextRequest) {
         },
       });
 
-      return NextResponse.json(updatedSettings);
+      return NextResponse.json({
+        ...updatedSettings,
+        targetDate: updatedSettings.targetDate.toISOString(),
+      });
     } else {
       // Create new settings
       const newSettings = await prisma.userSettings.create({
@@ -122,7 +128,10 @@ export async function PATCH(request: NextRequest) {
         },
       });
 
-      return NextResponse.json(newSettings, { status: 201 });
+      return NextResponse.json({
+        ...newSettings,
+        targetDate: newSettings.targetDate.toISOString(),
+      }, { status: 201 });
     }
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
