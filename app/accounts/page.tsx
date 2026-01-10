@@ -29,7 +29,6 @@ export default function AccountsPage() {
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { accounts, isLoading, refetch: refetchAccounts } = useAccounts();
@@ -39,7 +38,6 @@ export default function AccountsPage() {
     : null;
 
   const handleAddAccount = async (data: any) => {
-    setIsSubmitting(true);
     setSubmitError(null);
     try {
       await accountsApi.create({
@@ -52,8 +50,6 @@ export default function AccountsPage() {
       refetchAccounts();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Erreur lors de la création du compte");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

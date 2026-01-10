@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Home, Wallet, List, Settings, Menu, X, Sun, Moon, LogOut } from "lucide-react";

@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Header } from "@/components/layout/Header";
@@ -21,7 +22,6 @@ export default function SettingsPage() {
   const [goalAmount, setGoalAmount] = useState("40000");
   const [targetDate, setTargetDate] = useState("2028-12-31");
   const [userName, setUserName] = useState("Tristan");
-  const [userEmail, setUserEmail] = useState("tristan@example.com");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -239,7 +239,7 @@ export default function SettingsPage() {
                       Email (lecture seule)
                     </p>
                     <p className="rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100">
-                      {userEmail}
+                      tristan@example.com
                     </p>
                   </div>
                   <button

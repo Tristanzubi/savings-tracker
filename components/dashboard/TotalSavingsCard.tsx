@@ -13,7 +13,6 @@ export function TotalSavingsCard({
   percentage,
   deadline,
 }: TotalSavingsCardProps) {
-  const remaining = goal - currentSavings;
 
   // Format numbers with spaces as thousands separator
   const formatCurrency = (amount: number) => {

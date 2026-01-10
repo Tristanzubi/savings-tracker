@@ -15,11 +15,10 @@ export default function ContributionsPage() {
   const [showAddContributionForm, setShowAddContributionForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedContributionId, setSelectedContributionId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { contributions, isLoading: contributionsLoading, refetch: refetchContributions } = useContributions();
-  const { accounts, isLoading: accountsLoading } = useAccounts();
+  const { accounts } = useAccounts();
 
   const selectedContribution = selectedContributionId
     ? contributions.find((c) => c.id === selectedContributionId)
@@ -30,7 +29,6 @@ export default function ContributionsPage() {
     : null;
 
   const handleAddContribution = async (data: any) => {
-    setIsSubmitting(true);
     setSubmitError(null);
     try {
       await contributionsApi.create({
@@ -43,8 +41,6 @@ export default function ContributionsPage() {
       refetchContributions();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'ajout du versement");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -127,7 +123,7 @@ export default function ContributionsPage() {
     name: acc.name,
   }));
 
-  if (contributionsLoading || accountsLoading) {
+  if (contributionsLoading) {
     return (
       <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
         <Header activeRoute={activeRoute} onLogout={handleLogout} />

@@ -1,12 +1,6 @@
 // API Client for frontend requests
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
 export interface UserSettings {
   id: string | null;
   goal: number;
@@ -38,7 +32,7 @@ export interface SavingsContribution {
 
 async function apiRequest<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: Record<string, any>
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {

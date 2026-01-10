@@ -15,7 +15,6 @@ interface SavingsAccountCardProps {
 
 export function SavingsAccountCard({
   accountName,
-  accountType,
   balance,
   interestRate,
   createdAt,

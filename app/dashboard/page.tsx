@@ -11,7 +11,7 @@ import { ContributionDetailsModal } from "@/components/dashboard/ContributionDet
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
-import { Check, Calendar, Wallet, Plus } from "lucide-react";
+import { Check, Calendar, Wallet } from "lucide-react";
 import { useAccounts, useContributions, useSettings } from "@/lib/hooks";
 import { accountsApi, contributionsApi } from "@/lib/api-client";
 
@@ -37,17 +37,15 @@ export default function DashboardPage() {
   const [showContributionDetailsModal, setShowContributionDetailsModal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedContributionId, setSelectedContributionId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Fetch real data from backend
   const { accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useAccounts();
-  const { contributions, isLoading: contributionsLoading, refetch: refetchContributions } = useContributions();
+  const { contributions, refetch: refetchContributions } = useContributions();
   const { settings } = useSettings();
 
   // Handle adding new account
   const handleAddAccount = async (data: any) => {
-    setIsSubmitting(true);
     setSubmitError(null);
     try {
       await accountsApi.create({
@@ -60,14 +58,11 @@ export default function DashboardPage() {
       refetchAccounts();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Erreur lors de la création du compte");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   // Handle adding new contribution
   const handleAddContribution = async (data: any) => {
-    setIsSubmitting(true);
     setSubmitError(null);
     try {
       await contributionsApi.create({
@@ -81,8 +76,6 @@ export default function DashboardPage() {
       refetchAccounts();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'ajout du versement");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

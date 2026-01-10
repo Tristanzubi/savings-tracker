@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAuthClient } from "better-auth/client";
@@ -163,7 +164,7 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         });
         router.push("/dashboard");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur réseau", {
         description: "Veuillez vérifier votre connexion et réessayer.",
       });
