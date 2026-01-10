@@ -75,9 +75,6 @@ export function Header({
             <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
               💰 Savings Tracker
             </span>
-            <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-              Apport immobilier 40 000&nbsp;€ d'ici 2028
-            </span>
           </div>
         </div>
 
