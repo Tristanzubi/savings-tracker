@@ -18,9 +18,15 @@ export function middleware(request: NextRequest) {
   }
 
   // Pour toutes les autres routes, vérifier l'authentification
-  const sessionToken = request.cookies.get("better-auth.session_token");
+  // Better Auth peut utiliser différents noms de cookie, vérifions tous les cookies qui commencent par "better-auth"
+  const cookies = request.cookies.getAll();
+  const hasAuthCookie = cookies.some(cookie =>
+    cookie.name.startsWith("better-auth") ||
+    cookie.name === "session" ||
+    cookie.name.includes("session")
+  );
 
-  if (!sessionToken) {
+  if (!hasAuthCookie) {
     // Rediriger vers la page de login si pas de session
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);

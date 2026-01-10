@@ -29,8 +29,11 @@ interface AuthFormProps {
 // Create Better Auth client
 const authClient = createAuthClient({
   baseURL: typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
-    : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    ? window.location.origin
+    : "http://localhost:3000",
+  fetchOptions: {
+    credentials: "include",
+  },
 });
 
 export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
@@ -134,7 +137,7 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         });
         setTimeout(() => {
           window.location.href = "/dashboard";
-        }, 500);
+        }, 1000);
       } else {
         // Register flow
         const name = formData.get("name") as string;
@@ -166,7 +169,7 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         });
         setTimeout(() => {
           window.location.href = "/dashboard";
-        }, 500);
+        }, 1000);
       }
     } catch {
       toast.error("Erreur réseau", {
