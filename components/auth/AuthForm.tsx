@@ -132,7 +132,9 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         toast.success("Connexion réussie!", {
           description: "Redirection vers le tableau de bord...",
         });
-        router.push("/dashboard");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
       } else {
         // Register flow
         const name = formData.get("name") as string;
@@ -162,7 +164,9 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         toast.success("Compte créé!", {
           description: "Redirection vers le tableau de bord...",
         });
-        router.push("/dashboard");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
       }
     } catch {
       toast.error("Erreur réseau", {

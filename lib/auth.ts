@@ -7,8 +7,17 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  ],
   emailAndPassword: {
     enabled: true,
+  },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes
+    },
   },
   socialProviders: {
     // Ajoutez ici d'autres providers si nécessaire (Google, GitHub, etc.)
