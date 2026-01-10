@@ -200,6 +200,17 @@ export function Header({
                 </button>
               );
             })}
+            {/* Logout button for mobile */}
+            <button
+              type="button"
+              onClick={onLogout}
+              className="mt-2 inline-flex items-center gap-2 rounded-2xl border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/10 dark:bg-red-950/50">
+                <LogOut className="h-4 w-4 stroke-[1.5]" />
+              </span>
+              Déconnexion
+            </button>
           </div>
         </div>
       )}
