@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Home, Wallet, List, Settings, Menu, X, Sun, Moon, LogOut } from "lucide-react";
@@ -74,9 +75,6 @@ export function Header({
           <div className="flex flex-col">
             <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
               💰 Savings Tracker
-            </span>
-            <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-              Apport immobilier 40 000&nbsp;€ d'ici 2028
             </span>
           </div>
         </div>

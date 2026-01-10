@@ -11,20 +11,22 @@ async function main() {
   await prisma.user.deleteMany();
   console.log("✅ Base de données nettoyée");
 
-  // Créer les utilisateurs
+  // Créer les utilisateurs (Better Auth gère la création)
   const tristan = await prisma.user.create({
     data: {
+      id: "user-tristan-123",
       email: "tristan@example.com",
       name: "Tristan",
-      password: "$2a$10$XQ3KqJ9Z8Y5Z9Z5Z9Z5Z9O", // Hash factice pour développement
+      emailVerified: true,
     },
   });
 
   const copine = await prisma.user.create({
     data: {
+      id: "user-copine-123",
       email: "copine@example.com",
       name: "Copine",
-      password: "$2a$10$XQ3KqJ9Z8Y5Z9Z5Z9Z5Z9O", // Hash factice pour développement
+      emailVerified: true,
     },
   });
 

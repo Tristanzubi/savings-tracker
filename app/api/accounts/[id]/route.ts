@@ -9,6 +9,7 @@ const updateAccountSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   type: z.nativeEnum(AccountType).optional(),
   interestRate: z.number().min(0).max(100).optional(),
+  currentBalance: z.number().min(0).optional(),
 });
 
 /**
