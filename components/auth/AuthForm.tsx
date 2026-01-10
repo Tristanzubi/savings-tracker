@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAuthClient } from "better-auth/client";
+import { toast } from "sonner";
 import {
   User,
   Mail,
@@ -120,15 +121,16 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         });
 
         if (result.error) {
-          console.error("Login error:", result.error);
-          setErrors({
-            general: "Identifiants incorrects. Veuillez vérifier votre e-mail et mot de passe.",
+          toast.error("Mot de passe incorrect", {
+            description: "Veuillez vérifier vos identifiants et réessayer.",
           });
           return;
         }
 
         // Success - redirect to dashboard
-        console.log("Login successful:", result);
+        toast.success("Connexion réussie!", {
+          description: "Redirection vers le tableau de bord...",
+        });
         router.push("/dashboard");
       } else {
         // Register flow
@@ -141,30 +143,29 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
         });
 
         if (result.error) {
-          console.error("Registration error:", result.error);
-
           // Handle specific error cases
           if (result.error.message?.includes("already exists") ||
               result.error.message?.includes("duplicate")) {
-            setErrors({
-              general: "Un compte existe déjà avec cette adresse e-mail.",
+            toast.error("Compte existant", {
+              description: "Un compte existe déjà avec cette adresse e-mail.",
             });
           } else {
-            setErrors({
-              general: "Une erreur est survenue lors de la création du compte. Veuillez réessayer.",
+            toast.error("Erreur lors de la création", {
+              description: "Une erreur est survenue. Veuillez réessayer.",
             });
           }
           return;
         }
 
         // Success - redirect to dashboard
-        console.log("Registration successful:", result);
+        toast.success("Compte créé!", {
+          description: "Redirection vers le tableau de bord...",
+        });
         router.push("/dashboard");
       }
     } catch (error) {
-      console.error("Authentication error:", error);
-      setErrors({
-        general: "Une erreur réseau est survenue. Veuillez vérifier votre connexion et réessayer.",
+      toast.error("Erreur réseau", {
+        description: "Veuillez vérifier votre connexion et réessayer.",
       });
     } finally {
       setIsLoading(false);
@@ -182,11 +183,10 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
 
   // Clear error when user starts typing
   const handleInputChange = (fieldName: string) => {
-    if (errors[fieldName] || errors.general) {
+    if (errors[fieldName]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldName];
-        delete newErrors.general;
         return newErrors;
       });
     }
@@ -238,18 +238,6 @@ export function AuthForm({ onSubmit, onDemoClick }: AuthFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-        {/* General error message */}
-        {errors.general && (
-          <div className="rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 dark:border-red-800/50 dark:bg-red-900/20">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
-              <p className="text-sm text-red-800 dark:text-red-300">
-                {errors.general}
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Champ nom (inscription) */}
         {!isLogin && (
           <div className="space-y-1.5">
