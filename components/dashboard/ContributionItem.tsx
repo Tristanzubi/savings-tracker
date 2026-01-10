@@ -37,7 +37,7 @@ export function ContributionItem({
         {onEdit && (
           <button
             onClick={onEdit}
-            className="opacity-0 transition group-hover:opacity-100 text-slate-400 hover:text-orange-600 dark:hover:text-orange-400"
+            className="text-slate-400 transition hover:text-orange-600 dark:hover:text-orange-400"
             title="Modifier ce versement"
           >
             <Edit3 className="h-4 w-4" />

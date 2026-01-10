@@ -75,6 +75,15 @@ export default function ContributionsPage() {
     refetchContributions();
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   // Calculate stats from contributions
   const stats = useMemo(() => {
     if (!contributions || contributions.length === 0) {
@@ -121,7 +130,7 @@ export default function ContributionsPage() {
   if (contributionsLoading || accountsLoading) {
     return (
       <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
-        <Header activeRoute={activeRoute} />
+        <Header activeRoute={activeRoute} onLogout={handleLogout} />
         <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
           <div className="text-center">Chargement des versements...</div>
         </main>
@@ -131,7 +140,7 @@ export default function ContributionsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
-      <Header activeRoute={activeRoute} />
+      <Header activeRoute={activeRoute} onLogout={handleLogout} />
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
         <div className="space-y-6">

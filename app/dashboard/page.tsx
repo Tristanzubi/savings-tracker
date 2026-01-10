@@ -151,6 +151,15 @@ export default function DashboardPage() {
     refetchAccounts();
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   // Calculate totals from accounts
   const totalSavings = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
   const goal = settings?.goal || 40000;
@@ -197,7 +206,7 @@ export default function DashboardPage() {
   if (accountsLoading) {
     return (
       <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
-        <Header activeRoute={activeRoute} />
+        <Header activeRoute={activeRoute} onLogout={handleLogout} />
         <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
           <div className="text-center">Chargement des données...</div>
         </main>
@@ -207,7 +216,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
-      <Header activeRoute={activeRoute} />
+      <Header activeRoute={activeRoute} onLogout={handleLogout} />
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
         <div className="space-y-6">
