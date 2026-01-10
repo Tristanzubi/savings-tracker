@@ -1,5 +1,6 @@
 // API Client for frontend requests
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Use relative URLs so it works on any domain (local or production)
+const API_BASE_URL = '';
 
 export interface UserSettings {
   id: string | null;
