@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ContributionItem } from "@/components/dashboard/ContributionItem";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
+import { ContributionDetailsModal } from "@/components/dashboard/ContributionDetailsModal";
 import { Plus } from "lucide-react";
 import { useContributions, useAccounts } from "@/lib/hooks";
 import { contributionsApi } from "@/lib/api-client";
@@ -12,11 +13,21 @@ import { contributionsApi } from "@/lib/api-client";
 export default function ContributionsPage() {
   const [activeRoute] = useState("contributions");
   const [showAddContributionForm, setShowAddContributionForm] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedContributionId, setSelectedContributionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { contributions, isLoading: contributionsLoading, refetch: refetchContributions } = useContributions();
   const { accounts, isLoading: accountsLoading } = useAccounts();
+
+  const selectedContribution = selectedContributionId
+    ? contributions.find((c) => c.id === selectedContributionId)
+    : null;
+
+  const selectedAccount = selectedContribution
+    ? accounts.find((acc) => acc.id === selectedContribution.savingsAccountId)
+    : null;
 
   const handleAddContribution = async (data: any) => {
     setIsSubmitting(true);
@@ -35,6 +46,33 @@ export default function ContributionsPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleViewDetails = (contributionId: string) => {
+    setSelectedContributionId(contributionId);
+    setShowDetailsModal(true);
+  };
+
+  const handleSaveContributionDetails = async (data: {
+    amount: number;
+    date: string;
+    notes?: string;
+  }) => {
+    if (!selectedContributionId) return;
+    await contributionsApi.update(selectedContributionId, {
+      amount: data.amount,
+      date: new Date(data.date).toISOString(),
+      notes: data.notes || undefined,
+    });
+    refetchContributions();
+  };
+
+  const handleDeleteContribution = async () => {
+    if (!selectedContributionId) return;
+    await contributionsApi.delete(selectedContributionId);
+    setShowDetailsModal(false);
+    setSelectedContributionId(null);
+    refetchContributions();
   };
 
   // Calculate stats from contributions
@@ -153,6 +191,7 @@ export default function ContributionsPage() {
                     accountName={contribution.accountName}
                     date={contribution.date}
                     label={contribution.label}
+                    onEdit={() => handleViewDetails(contribution.id)}
                   />
                 ))
               ) : (
@@ -180,6 +219,23 @@ export default function ContributionsPage() {
         onSubmit={handleAddContribution}
         accounts={accountsForSelect}
       />
+
+      {/* Contribution Details Modal */}
+      {selectedContribution && selectedAccount && (
+        <ContributionDetailsModal
+          isOpen={showDetailsModal}
+          amount={selectedContribution.amount}
+          date={new Date(selectedContribution.date).toISOString().split('T')[0]}
+          notes={selectedContribution.notes}
+          accountName={selectedAccount.name}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedContributionId(null);
+          }}
+          onSave={handleSaveContributionDetails}
+          onDelete={handleDeleteContribution}
+        />
+      )}
     </div>
   );
 }

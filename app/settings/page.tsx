@@ -58,7 +58,7 @@ export default function SettingsPage() {
     try {
       await settingsApi.update({
         goal: parseFloat(goalAmount),
-        targetDate,
+        targetDate: new Date(targetDate).toISOString(),
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

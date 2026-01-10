@@ -6,6 +6,8 @@ import { TotalSavingsCard } from "@/components/dashboard/TotalSavingsCard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentContributionsList } from "@/components/dashboard/RecentContributionsList";
 import { SavingsAccountCard } from "@/components/savings/SavingsAccountCard";
+import { AccountDetailsModal } from "@/components/savings/AccountDetailsModal";
+import { ContributionDetailsModal } from "@/components/dashboard/ContributionDetailsModal";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
@@ -31,6 +33,10 @@ export default function DashboardPage() {
   const [activeRoute] = useState("dashboard");
   const [showAddContributionForm, setShowAddContributionForm] = useState(false);
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showContributionDetailsModal, setShowContributionDetailsModal] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedContributionId, setSelectedContributionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -80,11 +86,91 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle account details
+  const selectedAccount = selectedAccountId
+    ? accounts.find((acc) => acc.id === selectedAccountId)
+    : null;
+
+  const handleViewAccountDetails = (accountId: string) => {
+    setSelectedAccountId(accountId);
+    setShowDetailsModal(true);
+  };
+
+  const handleSaveAccountDetails = async (data: {
+    currentBalance: number;
+    interestRate: number;
+  }) => {
+    if (!selectedAccountId) return;
+    await accountsApi.update(selectedAccountId, data);
+    refetchAccounts();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!selectedAccountId) return;
+    await accountsApi.delete(selectedAccountId);
+    setShowDetailsModal(false);
+    setSelectedAccountId(null);
+    refetchAccounts();
+  };
+
+  // Handle contribution details
+  const selectedContribution = selectedContributionId
+    ? contributions.find((c) => c.id === selectedContributionId)
+    : null;
+
+  const selectedContributionAccount = selectedContribution
+    ? accounts.find((acc) => acc.id === selectedContribution.savingsAccountId)
+    : null;
+
+  const handleViewContributionDetails = (contributionId: string) => {
+    setSelectedContributionId(contributionId);
+    setShowContributionDetailsModal(true);
+  };
+
+  const handleSaveContributionDetails = async (data: {
+    amount: number;
+    date: string;
+    notes?: string;
+  }) => {
+    if (!selectedContributionId) return;
+    await contributionsApi.update(selectedContributionId, {
+      amount: data.amount,
+      date: new Date(data.date).toISOString(),
+      notes: data.notes || undefined,
+    });
+    refetchContributions();
+    refetchAccounts();
+  };
+
+  const handleDeleteContribution = async () => {
+    if (!selectedContributionId) return;
+    await contributionsApi.delete(selectedContributionId);
+    setShowContributionDetailsModal(false);
+    setSelectedContributionId(null);
+    refetchContributions();
+    refetchAccounts();
+  };
+
   // Calculate totals from accounts
   const totalSavings = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
   const goal = settings?.goal || 40000;
   const percentage = goal > 0 ? Math.round((totalSavings / goal) * 100) : 0;
   const remainingToSave = Math.max(0, goal - totalSavings);
+
+  // Calculate deadline info from settings
+  const targetDate = settings?.targetDate ? new Date(settings.targetDate) : new Date('2028-12-31');
+  const now = new Date();
+  const monthsRemaining = Math.ceil(
+    (targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+  );
+  const monthlyRequired = monthsRemaining > 0 ? remainingToSave / monthsRemaining : 0;
+
+  // Format deadline for display
+  const deadlineFormatted = targetDate.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   // Format contributions for display
   const formattedContributions = contributions.slice(0, 5).map((contrib) => {
@@ -132,7 +218,7 @@ export default function DashboardPage() {
               currentSavings={totalSavings}
               goal={goal}
               percentage={percentage}
-              deadline="31 décembre 2028"
+              deadline={deadlineFormatted}
             />
 
             {/* Stats Cards */}
@@ -151,14 +237,14 @@ export default function DashboardPage() {
                   icon={Calendar}
                   iconColor="amber"
                   title="Mois restants"
-                  value="35"
-                  description="Jusqu'au 31 décembre 2028."
+                  value={monthsRemaining.toString()}
+                  description={`Jusqu'au ${deadlineFormatted}.`}
                 />
                 <StatCard
                   icon={Wallet}
                   iconColor="orange"
                   title="Mensuel requis"
-                  value={`${(remainingToSave / 35).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €/mois`}
+                  value={`${Math.round(monthlyRequired).toLocaleString('fr-FR')} €/mois`}
                   description="Pour atteindre l'objectif à temps."
                 />
               </div>
@@ -186,9 +272,7 @@ export default function DashboardPage() {
                   createdAt={new Date(account.createdAt).toLocaleDateString('fr-FR')}
                   emoji={accountTypeEmojis[account.type] || "💰"}
                   description={accountDescriptions[account.type] || "Compte d'épargne"}
-                  onViewDetails={() =>
-                    console.log("Voir détails:", account.id)
-                  }
+                  onViewDetails={() => handleViewAccountDetails(account.id)}
                 />
               ))}
             </div>
@@ -199,6 +283,7 @@ export default function DashboardPage() {
             contributions={formattedContributions}
             onAdd={() => setShowAddContributionForm(true)}
             onViewAll={() => (window.location.href = "/contributions")}
+            onEdit={handleViewContributionDetails}
           />
         </div>
       </main>
@@ -229,6 +314,41 @@ export default function DashboardPage() {
         }}
         onSubmit={handleAddAccount}
       />
+
+      {/* Account Details Modal */}
+      {selectedAccount && (
+        <AccountDetailsModal
+          isOpen={showDetailsModal}
+          accountName={selectedAccount.name}
+          accountType={selectedAccount.type}
+          currentBalance={selectedAccount.currentBalance}
+          interestRate={selectedAccount.interestRate}
+          initialBalance={selectedAccount.initialBalance}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedAccountId(null);
+          }}
+          onSave={handleSaveAccountDetails}
+          onDelete={handleDeleteAccount}
+        />
+      )}
+
+      {/* Contribution Details Modal */}
+      {selectedContribution && selectedContributionAccount && (
+        <ContributionDetailsModal
+          isOpen={showContributionDetailsModal}
+          amount={selectedContribution.amount}
+          date={new Date(selectedContribution.date).toISOString().split('T')[0]}
+          notes={selectedContribution.notes}
+          accountName={selectedContributionAccount.name}
+          onClose={() => {
+            setShowContributionDetailsModal(false);
+            setSelectedContributionId(null);
+          }}
+          onSave={handleSaveContributionDetails}
+          onDelete={handleDeleteContribution}
+        />
+      )}
     </div>
   );
 }

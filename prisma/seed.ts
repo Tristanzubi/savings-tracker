@@ -14,6 +14,7 @@ async function main() {
   // Créer les utilisateurs (Better Auth gère la création)
   const tristan = await prisma.user.create({
     data: {
+      id: "user-tristan-123",
       email: "tristan@example.com",
       name: "Tristan",
       emailVerified: true,
@@ -22,6 +23,7 @@ async function main() {
 
   const copine = await prisma.user.create({
     data: {
+      id: "user-copine-123",
       email: "copine@example.com",
       name: "Copine",
       emailVerified: true,

@@ -14,12 +14,14 @@ interface RecentContributionsListProps {
   contributions: Contribution[];
   onAdd?: () => void;
   onViewAll?: () => void;
+  onEdit?: (contributionId: string) => void;
 }
 
 export function RecentContributionsList({
   contributions,
   onAdd,
   onViewAll,
+  onEdit,
 }: RecentContributionsListProps) {
   return (
     <section
@@ -60,6 +62,7 @@ export function RecentContributionsList({
             accountName={contribution.accountName}
             date={contribution.date}
             label={contribution.label}
+            onEdit={() => onEdit?.(contribution.id)}
           />
         ))}
       </div>

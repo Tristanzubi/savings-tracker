@@ -84,6 +84,11 @@ export const contributionsApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  update: (id: string, data: any) =>
+    apiRequest<SavingsContribution>(`/api/contributions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
   delete: (id: string) =>
     apiRequest<void>(`/api/contributions/${id}`, { method: 'DELETE' }),
 };

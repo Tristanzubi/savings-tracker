@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SavingsAccountCard } from "@/components/savings/SavingsAccountCard";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
+import { AccountDetailsModal } from "@/components/savings/AccountDetailsModal";
 import { Plus } from "lucide-react";
 import { useAccounts } from "@/lib/hooks";
 import { accountsApi } from "@/lib/api-client";
@@ -26,10 +27,16 @@ const accountDescriptions: Record<string, string> = {
 export default function AccountsPage() {
   const [activeRoute] = useState("accounts");
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { accounts, isLoading, refetch: refetchAccounts } = useAccounts();
+
+  const selectedAccount = selectedAccountId
+    ? accounts.find((acc) => acc.id === selectedAccountId)
+    : null;
 
   const handleAddAccount = async (data: any) => {
     setIsSubmitting(true);
@@ -51,8 +58,25 @@ export default function AccountsPage() {
   };
 
   const handleViewDetails = (accountId: string) => {
-    console.log("Voir détails du compte:", accountId);
-    // TODO: Navigation vers la page de détails
+    setSelectedAccountId(accountId);
+    setShowDetailsModal(true);
+  };
+
+  const handleSaveAccountDetails = async (data: {
+    currentBalance: number;
+    interestRate: number;
+  }) => {
+    if (!selectedAccountId) return;
+    await accountsApi.update(selectedAccountId, data);
+    refetchAccounts();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!selectedAccountId) return;
+    await accountsApi.delete(selectedAccountId);
+    setShowDetailsModal(false);
+    setSelectedAccountId(null);
+    refetchAccounts();
   };
 
   if (isLoading) {
@@ -128,6 +152,24 @@ export default function AccountsPage() {
         }}
         onSubmit={handleAddAccount}
       />
+
+      {/* Account Details Modal */}
+      {selectedAccount && (
+        <AccountDetailsModal
+          isOpen={showDetailsModal}
+          accountName={selectedAccount.name}
+          accountType={selectedAccount.type}
+          currentBalance={selectedAccount.currentBalance}
+          interestRate={selectedAccount.interestRate}
+          initialBalance={selectedAccount.initialBalance}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedAccountId(null);
+          }}
+          onSave={handleSaveAccountDetails}
+          onDelete={handleDeleteAccount}
+        />
+      )}
     </div>
   );
 }
