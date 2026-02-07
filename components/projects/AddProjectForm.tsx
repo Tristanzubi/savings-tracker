@@ -20,7 +20,7 @@ export function AddProjectForm({ isOpen, onClose, onSubmit }: AddProjectFormProp
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    emoji: "🎯",
+    emoji: "🏠",
     targetAmount: "",
     targetDate: "",
   });
@@ -31,7 +31,7 @@ export function AddProjectForm({ isOpen, onClose, onSubmit }: AddProjectFormProp
     onSubmit({
       name: formData.name,
       description: formData.description || undefined,
-      emoji: formData.emoji || "🎯",
+      emoji: formData.emoji || "🏠",
       targetAmount: parseFloat(formData.targetAmount),
       targetDate: formData.targetDate || undefined,
     });
@@ -40,7 +40,7 @@ export function AddProjectForm({ isOpen, onClose, onSubmit }: AddProjectFormProp
     setFormData({
       name: "",
       description: "",
-      emoji: "🎯",
+      emoji: "🏠",
       targetAmount: "",
       targetDate: "",
     });
@@ -96,16 +96,32 @@ export function AddProjectForm({ isOpen, onClose, onSubmit }: AddProjectFormProp
           <div className="grid grid-cols-4 gap-4">
             <div className="col-span-1">
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Emoji
+                Icône
               </label>
-              <input
-                type="text"
+              <select
                 value={formData.emoji}
                 onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
-                placeholder="🎯"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-2xl focus:border-orange-400 focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-800"
-                maxLength={2}
-              />
+              >
+                <option value="🏠">🏠</option>
+                <option value="🚗">🚗</option>
+                <option value="✈️">✈️</option>
+                <option value="💍">💍</option>
+                <option value="🎓">🎓</option>
+                <option value="💰">💰</option>
+                <option value="🎯">🎯</option>
+                <option value="🏖️">🏖️</option>
+                <option value="🏢">🏢</option>
+                <option value="🎸">🎸</option>
+                <option value="💻">💻</option>
+                <option value="📱">📱</option>
+                <option value="🎮">🎮</option>
+                <option value="🐕">🐕</option>
+                <option value="🌟">🌟</option>
+                <option value="💎">💎</option>
+                <option value="🎨">🎨</option>
+                <option value="📚">📚</option>
+              </select>
             </div>
 
             <div className="col-span-3">
