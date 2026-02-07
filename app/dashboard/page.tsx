@@ -11,9 +11,11 @@ import { ContributionDetailsModal } from "@/components/dashboard/ContributionDet
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
-import { Check, Calendar, Wallet } from "lucide-react";
-import { useAccounts, useContributions, useSettings } from "@/lib/hooks";
-import { accountsApi, contributionsApi } from "@/lib/api-client";
+import { Check, Calendar, Wallet, Plus } from "lucide-react";
+import { useAccounts, useContributions, useSettings, useProjects } from "@/lib/hooks";
+import { accountsApi, contributionsApi, projectsApi } from "@/lib/api-client";
+import { ProjectCard } from "@/components/projects/ProjectCard";
+import { AddProjectForm } from "@/components/projects/AddProjectForm";
 
 const accountTypeEmojis: Record<string, string> = {
   LEP: "🏦",
@@ -43,6 +45,11 @@ export default function DashboardPage() {
   const { accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useAccounts();
   const { contributions, refetch: refetchContributions } = useContributions();
   const { settings } = useSettings();
+  const { projects, refetch: refetchProjects } = useProjects();
+
+  // Projects state
+  const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
+  const [showAddProjectForm, setShowAddProjectForm] = useState(false);
 
   // Handle adding new account
   const handleAddAccount = async (data: any) => {
@@ -142,6 +149,30 @@ export default function DashboardPage() {
     setSelectedContributionId(null);
     refetchContributions();
     refetchAccounts();
+  };
+
+  // Project handlers
+  const handleAddProject = async (data: any) => {
+    setSubmitError(null);
+    try {
+      await projectsApi.create({
+        name: data.name,
+        description: data.description,
+        emoji: data.emoji,
+        targetAmount: data.targetAmount,
+        targetDate: data.targetDate ? new Date(data.targetDate).toISOString() : undefined,
+      });
+      setShowAddProjectForm(false);
+      refetchProjects();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de la création du projet");
+    }
+  };
+
+  const toggleProjectExpand = (projectId: string) => {
+    setExpandedProjects((prev) =>
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
+    );
   };
 
   const handleLogout = async () => {
@@ -280,6 +311,41 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Projects Section */}
+          {projects.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                  Vos projets
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProjectForm(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nouveau projet
+                </button>
+              </div>
+              <div className="space-y-4">
+                {projects.slice(0, 3).map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    projectName={project.name}
+                    emoji={project.emoji}
+                    currentAmount={project.currentAmount || 0}
+                    targetAmount={project.targetAmount}
+                    progress={project.progress || 0}
+                    allocatedFromAccounts={project.allocatedFromAccounts || []}
+                    status={project.status}
+                    isExpanded={expandedProjects.includes(project.id)}
+                    onToggleExpand={() => toggleProjectExpand(project.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Recent Contributions */}
           <RecentContributionsList
             contributions={formattedContributions}
@@ -315,6 +381,15 @@ export default function DashboardPage() {
           setSubmitError(null);
         }}
         onSubmit={handleAddAccount}
+      />
+
+      <AddProjectForm
+        isOpen={showAddProjectForm}
+        onClose={() => {
+          setShowAddProjectForm(false);
+          setSubmitError(null);
+        }}
+        onSubmit={handleAddProject}
       />
 
       {/* Account Details Modal */}
