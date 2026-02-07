@@ -312,21 +312,21 @@ export default function DashboardPage() {
           </div>
 
           {/* Projects Section */}
-          {projects.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                  Vos projets
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowAddProjectForm(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
-                >
-                  <Plus className="h-4 w-4" />
-                  Nouveau projet
-                </button>
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                Vos projets
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddProjectForm(true)}
+                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
+              >
+                <Plus className="h-4 w-4" />
+                Nouveau projet
+              </button>
+            </div>
+            {projects.length > 0 ? (
               <div className="space-y-4">
                 {projects.slice(0, 3).map((project) => (
                   <ProjectCard
@@ -343,8 +343,26 @@ export default function DashboardPage() {
                   />
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-3xl bg-white p-12 shadow-lg shadow-slate-900/8 ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800">
+                <div className="mb-4 text-6xl">🎯</div>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  Aucun projet pour le moment
+                </h3>
+                <p className="mb-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Créez votre premier projet pour suivre vos objectifs d'épargne
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProjectForm(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-6 py-3 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
+                >
+                  <Plus className="h-5 w-5" />
+                  Créer mon premier projet
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Recent Contributions */}
           <RecentContributionsList
