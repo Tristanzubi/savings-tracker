@@ -9,7 +9,7 @@ const updateProjectSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   emoji: z.string().max(10).optional(),
   targetAmount: z.number().positive().optional(),
-  targetDate: z.string().datetime().optional().nullable(),
+  targetDate: z.string().optional().nullable(),
   status: z.nativeEnum(ProjectStatus).optional(),
 });
 
@@ -19,11 +19,11 @@ const updateProjectSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth();
-    const { id } = params;
+    const { id } = await params;
 
     const project = await prisma.project.findUnique({
       where: { id },
@@ -89,11 +89,11 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Verify ownership
@@ -155,11 +155,11 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth();
-    const { id } = params;
+    const { id } = await params;
 
     const project = await prisma.project.findUnique({
       where: { id },

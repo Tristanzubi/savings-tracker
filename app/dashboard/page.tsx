@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
-import { TotalSavingsCard } from "@/components/dashboard/TotalSavingsCard";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentContributionsList } from "@/components/dashboard/RecentContributionsList";
 import { SavingsAccountCard } from "@/components/savings/SavingsAccountCard";
 import { AccountDetailsModal } from "@/components/savings/AccountDetailsModal";
@@ -11,11 +9,9 @@ import { ContributionDetailsModal } from "@/components/dashboard/ContributionDet
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
-import { Check, Calendar, Wallet, Plus } from "lucide-react";
-import { useAccounts, useContributions, useSettings, useProjects } from "@/lib/hooks";
-import { accountsApi, contributionsApi, projectsApi } from "@/lib/api-client";
+import { useAccounts, useContributions, useProjects } from "@/lib/hooks";
+import { accountsApi, contributionsApi } from "@/lib/api-client";
 import { ProjectCard } from "@/components/projects/ProjectCard";
-import { AddProjectForm } from "@/components/projects/AddProjectForm";
 
 const accountTypeEmojis: Record<string, string> = {
   LEP: "🏦",
@@ -44,12 +40,10 @@ export default function DashboardPage() {
   // Fetch real data from backend
   const { accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useAccounts();
   const { contributions, refetch: refetchContributions } = useContributions();
-  const { settings } = useSettings();
-  const { projects, refetch: refetchProjects } = useProjects();
+  const { projects } = useProjects();
 
   // Projects state
-  const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
-  const [showAddProjectForm, setShowAddProjectForm] = useState(false);
+  const [expandedProjects, setExpandedProjects] = useState<string[]>(['main-goal']);
 
   // Handle adding new account
   const handleAddAccount = async (data: any) => {
@@ -152,23 +146,6 @@ export default function DashboardPage() {
   };
 
   // Project handlers
-  const handleAddProject = async (data: any) => {
-    setSubmitError(null);
-    try {
-      await projectsApi.create({
-        name: data.name,
-        description: data.description,
-        emoji: data.emoji,
-        targetAmount: data.targetAmount,
-        targetDate: data.targetDate ? new Date(data.targetDate).toISOString() : undefined,
-      });
-      setShowAddProjectForm(false);
-      refetchProjects();
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Erreur lors de la création du projet");
-    }
-  };
-
   const toggleProjectExpand = (projectId: string) => {
     setExpandedProjects((prev) =>
       prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
@@ -184,26 +161,7 @@ export default function DashboardPage() {
     }
   };
 
-  // Calculate totals from accounts
-  const totalSavings = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
-  const goal = settings?.goal || 40000;
-  const percentage = goal > 0 ? Math.round((totalSavings / goal) * 100) : 0;
-  const remainingToSave = Math.max(0, goal - totalSavings);
-
-  // Calculate deadline info from settings
-  const targetDate = settings?.targetDate ? new Date(settings.targetDate) : new Date('2028-12-31');
-  const now = new Date();
-  const monthsRemaining = Math.ceil(
-    (targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
-  );
-  const monthlyRequired = monthsRemaining > 0 ? remainingToSave / monthsRemaining : 0;
-
-  // Format deadline for display
-  const deadlineFormatted = targetDate.toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Calculate totals from accounts (removed unused variables that were for the old main goal card)
 
   // Format contributions for display
   const formattedContributions = contributions.slice(0, 5).map((contrib) => {
@@ -244,43 +202,37 @@ export default function DashboardPage() {
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
         <div className="space-y-6">
-          {/* Top: Main cards */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Total Savings Card */}
-            <TotalSavingsCard
-              currentSavings={totalSavings}
-              goal={goal}
-              percentage={percentage}
-              deadline={deadlineFormatted}
-            />
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-4">
-              <StatCard
-                icon={Check}
-                iconColor="lime"
-                title="Il reste à épargner"
-                value={`${(remainingToSave).toLocaleString('fr-FR')} €`}
-                description="Sur la base de tous les comptes d'épargne liés."
-                badge="Calcul auto"
-                size="large"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard
-                  icon={Calendar}
-                  iconColor="amber"
-                  title="Mois restants"
-                  value={monthsRemaining.toString()}
-                  description={`Jusqu'au ${deadlineFormatted}.`}
+          {/* Projects Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                Vos projets
+              </h2>
+              <button
+                type="button"
+                onClick={() => (window.location.href = "/settings")}
+                className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+              >
+                Gérer les projets →
+              </button>
+            </div>
+            <div className="space-y-4">
+              {/* User Projects */}
+              {projects.slice(0, 3).map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  projectName={project.name}
+                  emoji={project.emoji}
+                  currentAmount={project.currentAmount || 0}
+                  targetAmount={project.targetAmount}
+                  progress={project.progress || 0}
+                  targetDate={project.targetDate}
+                  allocatedFromAccounts={project.allocatedFromAccounts || []}
+                  status={project.status}
+                  isExpanded={expandedProjects.includes(project.id)}
+                  onToggleExpand={() => toggleProjectExpand(project.id)}
                 />
-                <StatCard
-                  icon={Wallet}
-                  iconColor="orange"
-                  title="Mensuel requis"
-                  value={`${Math.round(monthlyRequired).toLocaleString('fr-FR')} €/mois`}
-                  description="Pour atteindre l'objectif à temps."
-                />
-              </div>
+              ))}
             </div>
           </div>
 
@@ -309,59 +261,6 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-          </div>
-
-          {/* Projects Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                Vos projets
-              </h2>
-              <button
-                type="button"
-                onClick={() => setShowAddProjectForm(true)}
-                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
-              >
-                <Plus className="h-4 w-4" />
-                Nouveau projet
-              </button>
-            </div>
-            {projects.length > 0 ? (
-              <div className="space-y-4">
-                {projects.slice(0, 3).map((project) => (
-                  <ProjectCard
-                    key={project.id}
-                    projectName={project.name}
-                    emoji={project.emoji}
-                    currentAmount={project.currentAmount || 0}
-                    targetAmount={project.targetAmount}
-                    progress={project.progress || 0}
-                    allocatedFromAccounts={project.allocatedFromAccounts || []}
-                    status={project.status}
-                    isExpanded={expandedProjects.includes(project.id)}
-                    onToggleExpand={() => toggleProjectExpand(project.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-3xl bg-white p-12 shadow-lg shadow-slate-900/8 ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800">
-                <div className="mb-4 text-6xl">🎯</div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                  Aucun projet pour le moment
-                </h3>
-                <p className="mb-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                  Créez votre premier projet pour suivre vos objectifs d'épargne
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowAddProjectForm(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-6 py-3 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
-                >
-                  <Plus className="h-5 w-5" />
-                  Créer mon premier projet
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Recent Contributions */}
@@ -399,15 +298,6 @@ export default function DashboardPage() {
           setSubmitError(null);
         }}
         onSubmit={handleAddAccount}
-      />
-
-      <AddProjectForm
-        isOpen={showAddProjectForm}
-        onClose={() => {
-          setShowAddProjectForm(false);
-          setSubmitError(null);
-        }}
-        onSubmit={handleAddProject}
       />
 
       {/* Account Details Modal */}

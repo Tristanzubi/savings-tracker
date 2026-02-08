@@ -13,11 +13,11 @@ const updateAllocationSchema = z.object({
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; allocationId: string } }
+  { params }: { params: Promise<{ id: string; allocationId: string }> }
 ) {
   try {
     const user = await requireAuth();
-    const { id: projectId, allocationId } = params;
+    const { id: projectId, allocationId } = await params;
     const body = await request.json();
 
     // Verify ownership through project
@@ -123,11 +123,11 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; allocationId: string } }
+  { params }: { params: Promise<{ id: string; allocationId: string }> }
 ) {
   try {
     const user = await requireAuth();
-    const { id: projectId, allocationId } = params;
+    const { id: projectId, allocationId } = await params;
 
     // Verify ownership through project
     const allocation = await prisma.projectAllocation.findUnique({

@@ -20,6 +20,11 @@ export interface SavingsAccount {
   currentBalance: number;
   createdAt: string;
   updatedAt: string;
+  allocations?: Array<{
+    id: string;
+    allocatedAmount: number;
+    projectId: string;
+  }>;
 }
 
 export interface SavingsContribution {
@@ -48,6 +53,15 @@ export interface Project {
     accountId: string;
     accountName: string;
     amount: number;
+  }>;
+  allocations?: Array<{
+    id: string;
+    allocatedAmount: number;
+    savingsAccount: {
+      id: string;
+      name: string;
+      currentBalance: number;
+    };
   }>;
 }
 

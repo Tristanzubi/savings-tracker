@@ -9,7 +9,7 @@ const createProjectSchema = z.object({
   description: z.string().max(500).optional(),
   emoji: z.string().max(10).optional(),
   targetAmount: z.number().positive("Target amount must be positive"),
-  targetDate: z.string().datetime().optional(),
+  targetDate: z.string().optional(),
   status: z.nativeEnum(ProjectStatus).optional(),
 });
 
@@ -62,6 +62,11 @@ export async function GET() {
           accountId: alloc.savingsAccount.id,
           accountName: alloc.savingsAccount.name,
           amount: alloc.allocatedAmount,
+        })),
+        allocations: project.allocations.map((alloc) => ({
+          id: alloc.id,
+          allocatedAmount: alloc.allocatedAmount,
+          savingsAccount: alloc.savingsAccount,
         })),
       };
     });
