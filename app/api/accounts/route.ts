@@ -30,6 +30,13 @@ export async function GET() {
             contributions: true,
           },
         },
+        allocations: {
+          select: {
+            id: true,
+            allocatedAmount: true,
+            projectId: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",

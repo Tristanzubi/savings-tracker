@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
-import { TotalSavingsCard } from "@/components/dashboard/TotalSavingsCard";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentContributionsList } from "@/components/dashboard/RecentContributionsList";
 import { SavingsAccountCard } from "@/components/savings/SavingsAccountCard";
 import { AccountDetailsModal } from "@/components/savings/AccountDetailsModal";
@@ -11,9 +9,9 @@ import { ContributionDetailsModal } from "@/components/dashboard/ContributionDet
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AddContributionForm } from "@/components/dashboard/AddContributionForm";
 import { AddAccountForm } from "@/components/savings/AddAccountForm";
-import { Check, Calendar, Wallet } from "lucide-react";
-import { useAccounts, useContributions, useSettings } from "@/lib/hooks";
+import { useAccounts, useContributions, useProjects } from "@/lib/hooks";
 import { accountsApi, contributionsApi } from "@/lib/api-client";
+import { ProjectCard } from "@/components/projects/ProjectCard";
 
 const accountTypeEmojis: Record<string, string> = {
   LEP: "🏦",
@@ -42,7 +40,10 @@ export default function DashboardPage() {
   // Fetch real data from backend
   const { accounts, isLoading: accountsLoading, refetch: refetchAccounts } = useAccounts();
   const { contributions, refetch: refetchContributions } = useContributions();
-  const { settings } = useSettings();
+  const { projects } = useProjects();
+
+  // Projects state
+  const [expandedProjects, setExpandedProjects] = useState<string[]>(['main-goal']);
 
   // Handle adding new account
   const handleAddAccount = async (data: any) => {
@@ -144,6 +145,13 @@ export default function DashboardPage() {
     refetchAccounts();
   };
 
+  // Project handlers
+  const toggleProjectExpand = (projectId: string) => {
+    setExpandedProjects((prev) =>
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
+    );
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/signout', { method: 'POST' });
@@ -153,26 +161,7 @@ export default function DashboardPage() {
     }
   };
 
-  // Calculate totals from accounts
-  const totalSavings = accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
-  const goal = settings?.goal || 40000;
-  const percentage = goal > 0 ? Math.round((totalSavings / goal) * 100) : 0;
-  const remainingToSave = Math.max(0, goal - totalSavings);
-
-  // Calculate deadline info from settings
-  const targetDate = settings?.targetDate ? new Date(settings.targetDate) : new Date('2028-12-31');
-  const now = new Date();
-  const monthsRemaining = Math.ceil(
-    (targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
-  );
-  const monthlyRequired = monthsRemaining > 0 ? remainingToSave / monthsRemaining : 0;
-
-  // Format deadline for display
-  const deadlineFormatted = targetDate.toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Calculate totals from accounts (removed unused variables that were for the old main goal card)
 
   // Format contributions for display
   const formattedContributions = contributions.slice(0, 5).map((contrib) => {
@@ -213,43 +202,37 @@ export default function DashboardPage() {
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
         <div className="space-y-6">
-          {/* Top: Main cards */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Total Savings Card */}
-            <TotalSavingsCard
-              currentSavings={totalSavings}
-              goal={goal}
-              percentage={percentage}
-              deadline={deadlineFormatted}
-            />
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 gap-4">
-              <StatCard
-                icon={Check}
-                iconColor="lime"
-                title="Il reste à épargner"
-                value={`${(remainingToSave).toLocaleString('fr-FR')} €`}
-                description="Sur la base de tous les comptes d'épargne liés."
-                badge="Calcul auto"
-                size="large"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard
-                  icon={Calendar}
-                  iconColor="amber"
-                  title="Mois restants"
-                  value={monthsRemaining.toString()}
-                  description={`Jusqu'au ${deadlineFormatted}.`}
+          {/* Projects Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                Vos projets
+              </h2>
+              <button
+                type="button"
+                onClick={() => (window.location.href = "/settings")}
+                className="text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+              >
+                Gérer les projets →
+              </button>
+            </div>
+            <div className="space-y-4">
+              {/* User Projects */}
+              {projects.slice(0, 3).map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  projectName={project.name}
+                  emoji={project.emoji}
+                  currentAmount={project.currentAmount || 0}
+                  targetAmount={project.targetAmount}
+                  progress={project.progress || 0}
+                  targetDate={project.targetDate}
+                  allocatedFromAccounts={project.allocatedFromAccounts || []}
+                  status={project.status}
+                  isExpanded={expandedProjects.includes(project.id)}
+                  onToggleExpand={() => toggleProjectExpand(project.id)}
                 />
-                <StatCard
-                  icon={Wallet}
-                  iconColor="orange"
-                  title="Mensuel requis"
-                  value={`${Math.round(monthlyRequired).toLocaleString('fr-FR')} €/mois`}
-                  description="Pour atteindre l'objectif à temps."
-                />
-              </div>
+              ))}
             </div>
           </div>
 

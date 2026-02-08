@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { accountsApi, contributionsApi, statsApi, settingsApi, type UserSettings, type SavingsAccount, type SavingsContribution } from './api-client';
+import { accountsApi, contributionsApi, statsApi, settingsApi, projectsApi, type UserSettings, type SavingsAccount, type SavingsContribution, type Project } from './api-client';
 
 // Hook pour les comptes d'épargne
 export function useAccounts() {
@@ -105,4 +105,30 @@ export function useSettings() {
   }, [fetchSettings]);
 
   return { settings, isLoading, error, refetch: fetchSettings };
+}
+
+// Hook pour les projets
+export function useProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProjects = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await projectsApi.list();
+      setProjects(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch projects');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  return { projects, isLoading, error, refetch: fetchProjects };
 }

@@ -1,73 +1,39 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Header } from "@/components/layout/Header";
-import { settingsApi } from "@/lib/api-client";
 import {
-  CheckCircle,
   User,
   Sun,
   Moon,
   Trash2,
   ChevronDown,
-  Calendar
+  Plus,
+  Target,
 } from "lucide-react";
+import { useProjects, useAccounts } from "@/lib/hooks";
+import { projectsApi, type Project } from "@/lib/api-client";
+import { ProjectCard } from "@/components/projects/ProjectCard";
+import { AddProjectForm } from "@/components/projects/AddProjectForm";
+import { EditProjectForm } from "@/components/projects/EditProjectForm";
+import { ManageAllocationsModal } from "@/components/projects/ManageAllocationsModal";
 
 export default function SettingsPage() {
   const [activeRoute] = useState("settings");
   const { theme, setTheme } = useTheme();
 
-  const [goalAmount, setGoalAmount] = useState("40000");
-  const [targetDate, setTargetDate] = useState("2028-12-31");
   const [userName, setUserName] = useState("Tristan");
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Load settings from API
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        setIsLoading(true);
-        const data = await settingsApi.get();
-        if (data) {
-          if (data.goal) setGoalAmount(data.goal.toString());
-          if (data.targetDate) {
-            const date = new Date(data.targetDate);
-            const formattedDate = date.toISOString().split('T')[0];
-            setTargetDate(formattedDate);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading settings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadSettings();
-  }, []);
-
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-    try {
-      await settingsApi.update({
-        goal: parseFloat(goalAmount),
-        targetDate: new Date(targetDate).toISOString(),
-      });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Projects
+  const { projects, refetch: refetchProjects } = useProjects();
+  const { accounts, refetch: refetchAccounts } = useAccounts();
+  const [showAddProjectForm, setShowAddProjectForm] = useState(false);
+  const [showEditProjectForm, setShowEditProjectForm] = useState(false);
+  const [showManageAllocationsModal, setShowManageAllocationsModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
 
   const handleUpdateProfile = async () => {
     console.log("Modifier le profil:", { userName });
@@ -97,6 +63,130 @@ export default function SettingsPage() {
     }
   };
 
+  // Project handlers
+  const handleAddProject = async (data: any) => {
+    try {
+      await projectsApi.create({
+        name: data.name,
+        description: data.description,
+        emoji: data.emoji,
+        targetAmount: data.targetAmount,
+        targetDate: data.targetDate ? new Date(data.targetDate).toISOString() : undefined,
+      });
+      setShowAddProjectForm(false);
+      refetchProjects();
+    } catch (error) {
+      console.error('Error creating project:', error);
+    }
+  };
+
+  const toggleProjectExpand = (projectId: string) => {
+    setExpandedProjects((prev) =>
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
+    );
+  };
+
+  const handleEditProject = async (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId);
+    if (project) {
+      setSelectedProject(project);
+      setShowEditProjectForm(true);
+    }
+  };
+
+  const handleUpdateProject = async (data: any) => {
+    if (!selectedProject) return;
+
+    try {
+      await projectsApi.update(selectedProject.id, {
+        name: data.name,
+        description: data.description,
+        emoji: data.emoji,
+        targetAmount: data.targetAmount,
+        targetDate: data.targetDate ? new Date(data.targetDate).toISOString() : null,
+        status: data.status,
+      });
+      setShowEditProjectForm(false);
+      setSelectedProject(null);
+      refetchProjects();
+    } catch (error) {
+      console.error('Error updating project:', error);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      await projectsApi.delete(projectId);
+      refetchProjects();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+  };
+
+  const handleDeleteSelectedProject = async () => {
+    if (!selectedProject) return;
+    await handleDeleteProject(selectedProject.id);
+    setShowEditProjectForm(false);
+    setSelectedProject(null);
+  };
+
+  const handleManageAllocations = (projectId: string) => {
+    const project = projects.find((p) => p.id === projectId);
+    if (project) {
+      setSelectedProject(project);
+      setShowManageAllocationsModal(true);
+    }
+  };
+
+  const handleAddAllocation = async (accountId: string, amount: number) => {
+    if (!selectedProject) return;
+
+    try {
+      await fetch(`/api/projects/${selectedProject.id}/allocations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ savingsAccountId: accountId, allocatedAmount: amount }),
+      });
+      await refetchProjects();
+      await refetchAccounts();
+    } catch (error) {
+      console.error('Error adding allocation:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdateAllocation = async (allocationId: string, amount: number) => {
+    if (!selectedProject) return;
+
+    try {
+      await fetch(`/api/projects/${selectedProject.id}/allocations/${allocationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allocatedAmount: amount }),
+      });
+      await refetchProjects();
+      await refetchAccounts();
+    } catch (error) {
+      console.error('Error updating allocation:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteAllocation = async (allocationId: string) => {
+    if (!selectedProject) return;
+
+    try {
+      await fetch(`/api/projects/${selectedProject.id}/allocations/${allocationId}`, {
+        method: 'DELETE',
+      });
+      await refetchProjects();
+      await refetchAccounts();
+    } catch (error) {
+      console.error('Error deleting allocation:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF8F3] dark:bg-slate-800">
       <Header activeRoute={activeRoute} onLogout={handleLogout} />
@@ -114,96 +204,68 @@ export default function SettingsPage() {
           </header>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Goal Configuration */}
-            <section className="col-span-1 flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/8 ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800 lg:col-span-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
-                    <CheckCircle className="h-4 w-4 stroke-[1.5]" />
+            {/* Left Column - Project Configuration */}
+            <div className="col-span-1 space-y-6 lg:col-span-2">
+              {/* Projects Management Section */}
+              <section className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/8 ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300">
+                      <Target className="h-4 w-4 stroke-[1.5]" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                        Gestion des projets
+                      </h3>
+                      <p className="text-base font-normal text-slate-500 dark:text-slate-400">
+                        Créez et gérez vos objectifs d'épargne
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                      Configuration de l'objectif
-                    </h3>
-                    <p className="text-base font-normal text-slate-500 dark:text-slate-400">
-                      Ces valeurs sont utilisées pour tous les calculs automatiques.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <form
-                onSubmit={handleSaveSettings}
-                className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2"
-              >
-                <div className="space-y-1.5">
-                  <label
-                    className="text-sm font-medium text-slate-700 dark:text-slate-200"
-                    htmlFor="target-amount"
-                  >
-                    Montant cible
-                  </label>
-                  <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus-within:border-orange-500 dark:focus-within:ring-orange-500/40">
-                    <input
-                      id="target-amount"
-                      type="number"
-                      inputMode="decimal"
-                      value={goalAmount}
-                      onChange={(e) => setGoalAmount(e.target.value)}
-                      disabled={isLoading}
-                      className="w-full border-none bg-transparent text-base outline-none placeholder:text-slate-400 disabled:opacity-50"
-                      aria-label="Montant cible en euros"
-                    />
-                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                      €
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    L'objectif total de votre épargne immobilière.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label
-                    className="text-sm font-medium text-slate-700 dark:text-slate-200"
-                    htmlFor="target-date"
-                  >
-                    Date cible
-                  </label>
-                  <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:focus-within:border-orange-500 dark:focus-within:ring-orange-500/40">
-                    <Calendar className="h-4 w-4 stroke-[1.5] text-slate-400 dark:text-slate-500" />
-                    <input
-                      id="target-date"
-                      type="date"
-                      value={targetDate}
-                      onChange={(e) => setTargetDate(e.target.value)}
-                      disabled={isLoading}
-                      className="w-full border-none bg-transparent text-base outline-none placeholder:text-slate-400 disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
                   <button
-                    type="submit"
-                    disabled={isSaving || isLoading}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-slate-900/40 transition hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-700 dark:hover:bg-slate-600"
+                    type="button"
+                    onClick={() => setShowAddProjectForm(true)}
+                    className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-orange-500/40 hover:bg-orange-600"
                   >
-                    {isSaving ? "Sauvegarde..." : "Sauvegarder les paramètres"}
+                    <Plus className="h-4 w-4" />
+                    Nouveau projet
                   </button>
-                  {saveSuccess && (
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                      ✓ Paramètres sauvegardés avec succès
-                    </p>
-                  )}
-                  {saveError && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      ✗ {saveError}
-                    </p>
-                  )}
                 </div>
-              </form>
-            </section>
+
+                {projects.length > 0 ? (
+                  <div className="mt-2 space-y-4">
+                    {projects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        projectName={project.name}
+                        emoji={project.emoji}
+                        currentAmount={project.currentAmount || 0}
+                        targetAmount={project.targetAmount}
+                        progress={project.progress || 0}
+                        targetDate={project.targetDate}
+                        allocatedFromAccounts={project.allocatedFromAccounts || []}
+                        status={project.status}
+                        isExpanded={expandedProjects.includes(project.id)}
+                        onToggleExpand={() => toggleProjectExpand(project.id)}
+                        onEdit={() => handleEditProject(project.id)}
+                        onDelete={() => handleDeleteProject(project.id)}
+                        onManageAllocations={() => handleManageAllocations(project.id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 p-8 dark:border-slate-700">
+                    <div className="mb-3 text-5xl">🎯</div>
+                    <h4 className="mb-1 text-base font-semibold text-slate-900 dark:text-slate-50">
+                      Aucun projet
+                    </h4>
+                    <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+                      Créez votre premier projet d'épargne pour commencer
+                    </p>
+                  </div>
+                )}
+              </section>
+            </div>
 
             {/* Right Column */}
             <div className="space-y-4">
@@ -324,6 +386,49 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* Add Project Form Modal */}
+      <AddProjectForm
+        isOpen={showAddProjectForm}
+        onClose={() => setShowAddProjectForm(false)}
+        onSubmit={handleAddProject}
+      />
+
+      {/* Edit Project Form Modal */}
+      <EditProjectForm
+        isOpen={showEditProjectForm}
+        onClose={() => {
+          setShowEditProjectForm(false);
+          setSelectedProject(null);
+        }}
+        onSubmit={handleUpdateProject}
+        onDelete={handleDeleteSelectedProject}
+        project={selectedProject}
+      />
+
+      {/* Manage Allocations Modal */}
+      {selectedProject && (
+        <ManageAllocationsModal
+          isOpen={showManageAllocationsModal}
+          onClose={() => {
+            setShowManageAllocationsModal(false);
+            setSelectedProject(null);
+          }}
+          projectId={selectedProject.id}
+          projectName={selectedProject.name}
+          projectEmoji={selectedProject.emoji}
+          allocations={selectedProject.allocations?.map(alloc => ({
+            id: alloc.id,
+            accountId: alloc.savingsAccount.id,
+            accountName: alloc.savingsAccount.name,
+            allocatedAmount: alloc.allocatedAmount,
+          })) || []}
+          accounts={accounts}
+          onAddAllocation={handleAddAllocation}
+          onUpdateAllocation={handleUpdateAllocation}
+          onDeleteAllocation={handleDeleteAllocation}
+        />
+      )}
     </div>
   );
 }
