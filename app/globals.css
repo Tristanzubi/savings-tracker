@@ -121,4 +121,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: 3.5rem;
+    }
+  }
 }
